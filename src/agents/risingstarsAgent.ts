@@ -76,6 +76,6 @@ export const risingStarsAgent = new Agent({
 - 说明项目受欢迎的原因
 - 用清晰的 Markdown 格式输出
 - 始终用中文回答`,
-  model: provider.responses("gpt-5.3-codex"),
+  model: provider("gpt-5.3-codex"),
   inputProcessors: [injectRisingStarsData],
 });
