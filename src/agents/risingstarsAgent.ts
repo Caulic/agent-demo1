@@ -1,6 +1,6 @@
 import { Agent } from "@mastra/core/agent";
 import { createOpenAI } from "@ai-sdk/openai";
-import type { ProcessInputArgs, ProcessorMessageResult } from "@mastra/core/processors";
+import type { ProcessInputArgs, ProcessInputResult } from "@mastra/core/processors";
 import { MessageList } from "@mastra/core/agent";
 import type { MastraDBMessage } from "@mastra/core/agent";
 
@@ -47,7 +47,7 @@ async function fetchTopProjects(limit = 30) {
 
 const injectRisingStarsData = {
   id: "inject-rising-stars",
-  async processInput({ messages }: ProcessInputArgs): Promise<ProcessorMessageResult> {
+  async processInput({ messages }: ProcessInputArgs): Promise<ProcessInputResult> {
     const projects = await fetchTopProjects();
     const dataContext = `以下是来自 risingstars.js.org 的最新热门项目数据（按年度 star 增长排序）：\n\`\`\`json\n${JSON.stringify(projects, null, 2)}\n\`\`\`\n请基于以上数据回答用户的问题。`;
 

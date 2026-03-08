@@ -25,7 +25,7 @@ interface ApiResponse {
   tags: Record<string, { name: string; code: string }>;
 }
 
-async function fetchProjects(): Promise<ApiResponse> {
+export async function fetchProjects(): Promise<ApiResponse> {
   const res = await fetch(BESTOFJS_API);
   if (!res.ok) throw new Error(`Failed to fetch: ${res.status}`);
   return res.json() as Promise<ApiResponse>;
@@ -112,6 +112,64 @@ export const getProjectDetailsTool = createTool({
       trends: project.trends,
       categories: tagNames,
       url: project.url ?? `https://github.com/${project.full_name}`,
+    };
+  },
+});
+
+export const getCategoryBreakdownTool = createTool({
+  id: "get-category-breakdown",
+  description:
+    "Get a breakdown of trending JavaScript projects by category/tag. Returns statistics for each category including project count, total star gains, and top projects.",
+  inputSchema: z.object({
+    limit: z
+      .number()
+      .optional()
+      .default(100)
+      .describe("Number of trending projects to analyze (default: 100)"),
+    topN: z
+      .number()
+      .optional()
+      .default(10)
+      .describe("Number of top categories to return (default: 10)"),
+  }),
+  execute: async (inputData) => {
+    const { limit = 100, topN = 10 } = inputData;
+    const data = await fetchProjects();
+
+    const trending = data.projects
+      .filter((p) => (p.trends?.yearly ?? 0) > 0)
+      .sort((a, b) => (b.trends?.yearly ?? 0) - (a.trends?.yearly ?? 0))
+      .slice(0, limit);
+
+    const categoryMap: Record<
+      string,
+      { count: number; totalYearlyGain: number; topProject: string }
+    > = {};
+
+    for (const p of trending) {
+      for (const tagCode of p.tags) {
+        const tagName = data.tags[tagCode]?.name ?? tagCode;
+        if (!categoryMap[tagName]) {
+          categoryMap[tagName] = {
+            count: 0,
+            totalYearlyGain: 0,
+            topProject: p.name,
+          };
+        }
+        categoryMap[tagName].count++;
+        categoryMap[tagName].totalYearlyGain += p.trends?.yearly ?? 0;
+      }
+    }
+
+    const categories = Object.entries(categoryMap)
+      .sort((a, b) => b[1].totalYearlyGain - a[1].totalYearlyGain)
+      .slice(0, topN)
+      .map(([name, stats]) => ({ name, ...stats }));
+
+    return {
+      updatedAt: data.date,
+      analyzedProjects: trending.length,
+      categories,
     };
   },
 });
