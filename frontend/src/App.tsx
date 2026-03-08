@@ -127,8 +127,9 @@ export default function App() {
           try {
             const chunk = JSON.parse(raw);
             const delta =
-              chunk?.textDelta ??
-              chunk?.choices?.[0]?.delta?.content ??
+              (chunk?.type === "text-delta" && chunk?.payload?.text) ||
+              chunk?.textDelta ||
+              chunk?.choices?.[0]?.delta?.content ||
               "";
             if (delta) {
               setMessages((prev) =>
