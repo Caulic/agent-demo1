@@ -300,7 +300,7 @@ export default function App() {
             </button>
           )}
         </div>
-        <p style={styles.hint}>数据来源：bestofjs-static-api.vercel.app</p>
+        <p style={styles.hint}>数据来源：risingstars.js.org (2025)</p>
       </footer>
     </div>
   );

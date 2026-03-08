@@ -1,32 +1,30 @@
 import { createTool } from "@mastra/core/tools";
 import { z } from "zod";
 
-const BESTOFJS_API = "https://bestofjs-static-api.vercel.app/projects.json";
+const RISINGSTARS_DATA_URL =
+  "https://raw.githubusercontent.com/bestofjs/javascript-risingstars/develop/data/2025.json";
 
 interface Project {
   name: string;
   full_name: string;
   description: string;
   stars: number;
-  trends: {
-    daily?: number;
-    weekly?: number;
-    monthly?: number;
-    yearly?: number;
-  };
+  delta: number;
+  monthly: number[];
   tags: string[];
   url?: string;
   owner_id: number;
+  created_at?: string;
 }
 
 interface ApiResponse {
   date: string;
+  count: number;
   projects: Project[];
-  tags: Record<string, { name: string; code: string }>;
 }
 
 export async function fetchProjects(): Promise<ApiResponse> {
-  const res = await fetch(BESTOFJS_API);
+  const res = await fetch(RISINGSTARS_DATA_URL);
   if (!res.ok) throw new Error(`Failed to fetch: ${res.status}`);
   return res.json() as Promise<ApiResponse>;
 }
@@ -52,22 +50,20 @@ export const getRisingStarsTool = createTool({
     const { limit = 20, tag } = inputData;
     const data = await fetchProjects();
 
-    let projects = data.projects.filter(
-      (p) => p.trends?.yearly != null && p.trends.yearly > 0
-    );
+    let projects = data.projects.filter((p) => p.delta > 0);
 
     if (tag) {
       projects = projects.filter((p) => p.tags.includes(tag));
     }
 
-    projects.sort((a, b) => (b.trends?.yearly ?? 0) - (a.trends?.yearly ?? 0));
+    projects.sort((a, b) => b.delta - a.delta);
 
     const top = projects.slice(0, limit).map((p) => ({
       name: p.name,
       repo: p.full_name,
       description: p.description,
       totalStars: p.stars,
-      yearlyStarGain: p.trends?.yearly ?? 0,
+      yearlyStarGain: p.delta,
       tags: p.tags,
       url: p.url ?? `https://github.com/${p.full_name}`,
     }));
@@ -97,20 +93,17 @@ export const getProjectDetailsTool = createTool({
       (p) => p.full_name.toLowerCase() === repoFullName.toLowerCase()
     );
     if (!project) {
-      return { error: `Project '${repoFullName}' not found in bestofjs data` };
+      return { error: `Project '${repoFullName}' not found in risingstars data` };
     }
-
-    const tagNames = project.tags
-      .map((t) => data.tags[t]?.name ?? t)
-      .join(", ");
 
     return {
       name: project.name,
       repo: project.full_name,
       description: project.description,
       totalStars: project.stars,
-      trends: project.trends,
-      categories: tagNames,
+      yearlyStarGain: project.delta,
+      monthlyStars: project.monthly,
+      categories: project.tags.join(", "),
       url: project.url ?? `https://github.com/${project.full_name}`,
     };
   },
@@ -137,8 +130,8 @@ export const getCategoryBreakdownTool = createTool({
     const data = await fetchProjects();
 
     const trending = data.projects
-      .filter((p) => (p.trends?.yearly ?? 0) > 0)
-      .sort((a, b) => (b.trends?.yearly ?? 0) - (a.trends?.yearly ?? 0))
+      .filter((p) => p.delta > 0)
+      .sort((a, b) => b.delta - a.delta)
       .slice(0, limit);
 
     const categoryMap: Record<
@@ -147,17 +140,16 @@ export const getCategoryBreakdownTool = createTool({
     > = {};
 
     for (const p of trending) {
-      for (const tagCode of p.tags) {
-        const tagName = data.tags[tagCode]?.name ?? tagCode;
-        if (!categoryMap[tagName]) {
-          categoryMap[tagName] = {
+      for (const tag of p.tags) {
+        if (!categoryMap[tag]) {
+          categoryMap[tag] = {
             count: 0,
             totalYearlyGain: 0,
             topProject: p.name,
           };
         }
-        categoryMap[tagName].count++;
-        categoryMap[tagName].totalYearlyGain += p.trends?.yearly ?? 0;
+        categoryMap[tag].count++;
+        categoryMap[tag].totalYearlyGain += p.delta;
       }
     }
 

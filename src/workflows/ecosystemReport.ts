@@ -25,7 +25,7 @@ const categorySchema = z.object({
 
 const fetchProjectsStep = createStep({
   id: "fetch-projects",
-  description: "Fetch top trending JS projects from bestofjs API",
+  description: "Fetch top trending JS projects from risingstars.js.org",
   inputSchema: z.object({
     limit: z.number().default(50),
     tag: z.string().optional(),
@@ -38,25 +38,21 @@ const fetchProjectsStep = createStep({
   execute: async ({ inputData }) => {
     const data = await fetchProjects();
 
-    let projects = data.projects.filter(
-      (p) => (p.trends?.yearly ?? 0) > 0
-    );
+    let projects = data.projects.filter((p) => p.delta > 0);
 
     if (inputData.tag) {
       projects = projects.filter((p) => p.tags.includes(inputData.tag!));
     }
 
-    projects.sort(
-      (a, b) => (b.trends?.yearly ?? 0) - (a.trends?.yearly ?? 0)
-    );
+    projects.sort((a, b) => b.delta - a.delta);
 
     const top = projects.slice(0, inputData.limit).map((p) => ({
       name: p.name,
       repo: p.full_name,
       description: p.description,
       totalStars: p.stars,
-      yearlyStarGain: p.trends?.yearly ?? 0,
-      tags: p.tags.map((t) => data.tags[t]?.name ?? t),
+      yearlyStarGain: p.delta,
+      tags: p.tags,
       url: p.url ?? `https://github.com/${p.full_name}`,
     }));
 

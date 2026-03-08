@@ -9,35 +9,37 @@ const provider = createOpenAI({
   apiKey: process.env.OPENAI_API_KEY ?? "",
 });
 
-const BESTOFJS_API = "https://bestofjs-static-api.vercel.app/projects.json";
+const RISINGSTARS_DATA_URL =
+  "https://raw.githubusercontent.com/bestofjs/javascript-risingstars/develop/data/2025.json";
 
 async function fetchTopProjects(limit = 30) {
-  const res = await fetch(BESTOFJS_API);
+  const res = await fetch(RISINGSTARS_DATA_URL);
   const data = (await res.json()) as {
     date: string;
+    count: number;
     projects: Array<{
       name: string;
       full_name: string;
       description: string;
       stars: number;
-      trends: { yearly?: number };
+      delta: number;
+      monthly: number[];
       tags: string[];
       url?: string;
     }>;
-    tags: Record<string, { name: string }>;
   };
 
   return data.projects
-    .filter((p) => (p.trends?.yearly ?? 0) > 0)
-    .sort((a, b) => (b.trends?.yearly ?? 0) - (a.trends?.yearly ?? 0))
+    .filter((p) => p.delta > 0)
+    .sort((a, b) => b.delta - a.delta)
     .slice(0, limit)
     .map((p) => ({
       name: p.name,
       repo: p.full_name,
       description: p.description,
       totalStars: p.stars,
-      yearlyGain: p.trends?.yearly ?? 0,
-      tags: p.tags.map((t) => data.tags[t]?.name ?? t),
+      yearlyGain: p.delta,
+      tags: p.tags,
       url: p.url ?? `https://github.com/${p.full_name}`,
     }));
 }
