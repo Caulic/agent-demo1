@@ -10,7 +10,7 @@
   "scripts": {
     "dev": "mastra dev",
     "build": "mastra build",
-    "deploy": "node deploy.mjs"
+    "deploy": "mastra deploy"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.58",
