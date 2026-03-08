@@ -10,7 +10,7 @@ const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:4111";
 const AGENT_STREAM_URL = `${API_URL}/api/agents/rising-stars-agent/stream`;
 
 const SUGGESTIONS = [
-  "2024 年最受关注的前 5 个 JS 项目是什么？",
+  "2026 年最受关注的前 5 个 JS 项目是什么？",
   "分析一下 React 生态的现状",
   "Bun 和 Node.js 相比有哪些优势？",
   "有哪些值得关注的新兴全栈框架？",
