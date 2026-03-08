@@ -4,12 +4,9 @@ import type { ProcessInputArgs, ProcessInputResult } from "@mastra/core/processo
 import { MessageList } from "@mastra/core/agent";
 import type { MastraDBMessage } from "@mastra/core/agent";
 
-const apiKey = process.env.OPENAI_API_KEY;
-if (!apiKey) throw new Error("Missing environment variable: OPENAI_API_KEY");
-
 const provider = createOpenAI({
   baseURL: "https://api.n.cv/v1",
-  apiKey,
+  apiKey: process.env.OPENAI_API_KEY ?? "",
 });
 
 const BESTOFJS_API = "https://bestofjs-static-api.vercel.app/projects.json";
