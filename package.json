@@ -9,7 +9,7 @@
   "type": "module",
   "scripts": {
     "dev": "mastra dev",
-    "build": "mastra build",
+    "build": "mastra build && node strip-chunks.mjs",
     "deploy": "mastra deploy"
   },
   "dependencies": {
